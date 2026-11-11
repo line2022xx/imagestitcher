@@ -78,6 +78,23 @@ ImageStitcher/
    ./gradlew testDebugUnitTest        # 跑单元测试
    ```
 
+### 构建发布包
+
+Release 签名信息从 `keystore.properties` 读取，该文件与 `keystore/` 目录均已加入 `.gitignore`，不入库：
+
+```properties
+RELEASE_STORE_FILE=keystore/imagestitcher-release.jks
+RELEASE_STORE_PASSWORD=******
+RELEASE_KEY_ALIAS=imagestitcher
+RELEASE_KEY_PASSWORD=******
+```
+
+```bash
+./gradlew assembleRelease    # 产物：app/build/outputs/apk/release/app-release.apk
+```
+
+没有该文件时 `assembleRelease` 只会产出未签名包（装不上），但不影响日常 debug 构建与单元测试 —— 其他人 clone 下来无需密钥即可开发。
+
 国内网络如果下载依赖慢，可在 `settings.gradle.kts` 的两个 `repositories` 块里，把 `google()` / `mavenCentral()` 前面加上镜像地址。
 
 ## 内存策略（为什么超长图不会崩）
