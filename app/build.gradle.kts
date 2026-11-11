@@ -1,7 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+// 签名信息从 keystore.properties 读取（该文件不入库）。
+// 文件不存在时 release 仅产出未签名包，不影响日常开发与 CI 构建。
+val keystorePropsFile = rootProject.file("keystore.properties")
+val keystoreProps = Properties().apply {
+    if (keystorePropsFile.exists()) {
+        keystorePropsFile.inputStream().use { load(it) }
+    }
+}
+val releaseStorePath: String? = keystoreProps.getProperty("RELEASE_STORE_FILE")
+val hasReleaseKeystore = releaseStorePath != null && rootProject.file(releaseStorePath).exists()
 
 android {
     namespace = "com.linexx.imagestitcher"
@@ -16,6 +29,17 @@ android {
         vectorDrawables { useSupportLibrary = true }
     }
 
+    signingConfigs {
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(releaseStorePath!!)
+                storePassword = keystoreProps.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = keystoreProps.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = keystoreProps.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -23,6 +47,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (hasReleaseKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
